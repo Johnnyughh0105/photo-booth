@@ -1,112 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Photo Booth with Filters & Stickers</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      background: #eee;
-      padding: 2rem;
-    }
-    video, canvas {
-      width: 640px;
-      height: 480px;
-      border: 3px solid #444;
-      border-radius: 10px;
-      margin-bottom: 1rem;
-    }
-    .controls {
-      margin-bottom: 1rem;
-    }
-    button, select {
-      padding: 10px 15px;
-      margin: 5px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    #downloadLink {
-      display: none;
-      margin-top: 10px;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photo Booth</title>
+  <script defer src="script.js"></script>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
-  <h1>Photo Booth</h1>
-
-  <video id="video" autoplay></video>
-  <canvas id="canvas" width="640" height="480"></canvas>
-
-  <div class="controls">
-    <select id="filter">
-      <option value="none">No Filter</option>
-      <option value="grayscale(100%)">Grayscale</option>
-      <option value="sepia(100%)">Sepia</option>
-      <option value="invert(100%)">Invert</option>
-    </select>
-
-    <select id="sticker">
-      <option value="">No Sticker</option>
-      <option value="https://i.imgur.com/4AiXzf8.png">Sunglasses</option>
-      <option value="https://i.imgur.com/fXQbXDC.png">Hat</option>
-    </select>
-
-    <br>
-
-    <button id="snap">Take Photo</button>
-    <button id="reset">Reset</button>
-    <a id="downloadLink" download="photo.png">Download Photo</a>
+  <div id="welcome" class="screen active">
+    <h1>WELCOME</h1>
+    <p>Photo Booth</p>
+    <button id="startBtn">Start</button>
   </div>
 
-  <script>
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const context = canvas.getContext('2d');
-    const snap = document.getElementById('snap');
-    const reset = document.getElementById('reset');
-    const filter = document.getElementById('filter');
-    const sticker = document.getElementById('sticker');
-    const downloadLink = document.getElementById('downloadLink');
+  <div id="camera" class="screen">
+    <div id="countdown"></div>
+    <video id="video" autoplay muted playsinline></video>
+    <button id="captureBtn">Take Photos</button>
+    <canvas id="canvas" width="300" height="200" class="hidden"></canvas>
+  </div>
 
-    // Start webcam
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => {
-        video.srcObject = stream;
-      })
-      .catch(err => console.error('Camera error:', err));
-
-    // Take photo
-    snap.addEventListener('click', () => {
-      context.filter = filter.value;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      // Add sticker if selected
-      if (sticker.value) {
-        const img = new Image();
-        img.crossOrigin = 'anonymous'; // for external images
-        img.src = sticker.value;
-        img.onload = () => {
-          // Example position & size — you can enhance this
-          context.drawImage(img, 200, 100, 200, 100);
-          const dataUrl = canvas.toDataURL('image/png');
-          downloadLink.href = dataUrl;
-          downloadLink.style.display = 'inline-block';
-        };
-      } else {
-        const dataUrl = canvas.toDataURL('image/png');
-        downloadLink.href = dataUrl;
-        downloadLink.style.display = 'inline-block';
-      }
-    });
-
-    // Reset canvas
-    reset.addEventListener('click', () => {
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      downloadLink.style.display = 'none';
-    });
-  </script>
-
+  <div id="result" class="screen">
+    <div class="photo-strip" id="strip"></div>
+    <button id="restartBtn">Restart</button>
+  </div>
 </body>
 </html>
