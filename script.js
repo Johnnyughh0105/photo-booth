@@ -12,8 +12,13 @@ startBtn.addEventListener('click', async () => {
   cameraContainer.classList.remove('hidden');
   startBtn.classList.add('hidden');
 
-  stream = await navigator.mediaDevices.getUserMedia({ video: true });
-  video.srcObject = stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    video.srcObject = stream;
+  } catch (error) {
+    alert('Camera access denied or unavailable.');
+    console.error(error);
+  }
 });
 
 takePhotoBtn.addEventListener('click', () => {
@@ -25,7 +30,9 @@ takePhotoBtn.addEventListener('click', () => {
   cameraContainer.classList.add('hidden');
   photoContainer.classList.remove('hidden');
 
-  video.srcObject.getTracks().forEach(track => track.stop());
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+  }
 });
 
 restartBtn.addEventListener('click', () => {
