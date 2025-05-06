@@ -78,13 +78,31 @@
     #download {
       margin-top: 20px;
     }
+
+    #preview-container {
+      position: relative;
+      width: 300px;
+      height: 400px;
+      margin-top: 20px;
+    }
+
+    #framePreview {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
   <h1>Life4Cuts PhotoBooth</h1>
 
-  <video id="video" autoplay></video>
-  <canvas id="canvas" width="300" height="400"></canvas>
+  <div id="preview-container">
+    <video id="video" autoplay muted playsinline style="width:100%; height:100%; object-fit: cover;"></video>
+    <img id="framePreview" class="frame" style="pointer-events: none;" />
+  </div>
 
   <div class="controls">
     <label for="filter">Choose Filter:</label>
@@ -128,14 +146,21 @@
     const countdownEl = document.getElementById('countdown');
     const strip = document.getElementById('strip');
     const downloadBtn = document.getElementById('download');
+    const framePreview = document.getElementById('framePreview');
+    const previewVideo = document.getElementById('video');
     let capturedImages = [];
 
+    // Initialize webcam feed
     async function setupCamera() {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      video.srcObject = stream;
-      return new Promise(resolve => video.onloadedmetadata = resolve);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+      } catch (err) {
+        console.error('Error accessing webcam:', err);
+      }
     }
 
+    // Real-time countdown logic
     function countdown(seconds) {
       return new Promise(resolve => {
         let counter = seconds;
@@ -152,6 +177,18 @@
       });
     }
 
+    // Handle live filter update
+    filterSelect.addEventListener('change', () => {
+      previewVideo.style.filter = filterSelect.value;
+    });
+
+    // Handle live frame overlay update
+    frameSelect.addEventListener('change', () => {
+      const frameURL = frameSelect.value;
+      framePreview.src = frameURL === 'none' ? '' : frameURL;
+    });
+
+    // Function to create the frame overlay on photos
     function createFrameOverlay() {
       const frameURL = frameSelect.value;
       if (frameURL === 'none') return null;
@@ -162,6 +199,7 @@
       return frame;
     }
 
+    // Draggable sticker logic
     function makeStickerDraggable(sticker, container) {
       let offsetX, offsetY;
 
@@ -183,6 +221,7 @@
       });
     }
 
+    // Take photos logic
     async function takePhotos() {
       capturedImages = [];
       strip.innerHTML = '';
@@ -215,6 +254,7 @@
       downloadBtn.style.display = 'inline-block';
     }
 
+    // Download photo strip logic
     function downloadStrip() {
       const stripCanvas = document.createElement('canvas');
       stripCanvas.width = 300;
@@ -258,6 +298,7 @@
 
     startBtn.addEventListener('click', takePhotos);
     downloadBtn.addEventListener('click', downloadStrip);
+
     setupCamera();
   </script>
 </body>
