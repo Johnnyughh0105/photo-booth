@@ -1,27 +1,442 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Photo Booth</title>
-  <link rel="stylesheet" href="style.css" />
-  <script defer src="script.js"></script>
-</head>
-<body>
-  <div class="container">
-    <h1>WELCOME</h1>
-    <h2>Photo Booth</h2>
-    <button id="startBtn">Start</button>
-    
-    <div id="cameraContainer" class="hidden">
-      <video id="video" autoplay></video>
-      <button id="takePhotoBtn">Take Photos</button>
-    </div>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Life4cuts Style Photobooth<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap');
 
-    <div id="photoContainer" class="hidden">
-      <canvas id="canvas"></canvas>
-      <button id="restartBtn">Restart</button>
-    </div>
-  </div>
-</body>
-</html>
+  /* Base and Reset */
+  * {
+    box-sizing: border-box;
+  }
+  body, html {
+    margin: 0; padding: 0;
+    height: 100%;
+    background: #0f0c29;  /* dark gradient base */
+    background: linear-gradient(135deg, #1f1c2c, #928dab);
+    font-family: 'Poppins', sans-serif;
+    color: #eee;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  /* Subtle animated background pattern */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at center, rgba(155,35,234,0.3) 1%, transparent 70%), radial-gradient(circle at center, rgba(155,35,234,0.3) 1%, transparent 70%);
+    background-position: 0 0, 40px 40px;
+    background-size: 80px 80px;
+    animation: bgMove 16s linear infinite;
+    pointer-events: none;
+    z-index: -1;
+  }
+  @keyframes bgMove {
+    0% {background-position: 0 0, 40px 40px;}
+    100% {background-position: 40px 40px, 0 0;}
+  }
+
+  #app {
+    max-width: 340px;
+    max-height: 600px;
+    background: #1f1c2c;
+    margin: 32px auto;
+    border-radius: 32px;
+    box-shadow:
+      0 0 40px 6px #9b23ea,
+      0 0 80px 15px #5f72be,
+      inset 0 0 35px 10px #5f72be;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+    position: relative;
+  }
+  header {
+    padding: 20px 0;
+    background: linear-gradient(90deg, #9b23ea, #5f72be);
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.8rem;
+    color: #fff;
+    letter-spacing: 4px;
+    text-shadow: 0 0 8px #d48aff;
+    border-top-left-radius: 32px;
+    border-top-right-radius: 32px;
+  }
+  main {
+    flex: 1;
+    position: relative;
+    background: #22202c;
+    margin: 12px 12px 16px;
+    border-radius: 24px;
+    box-shadow: inset 0 0 50px 8px #5f72be;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 0 12px 0;
+  }
+  #video {
+    max-width: 320px;
+    width: 90vw;
+    max-height: 250px;
+    border-radius: 22px;
+    border: 5px solid #9b23ea;
+    box-shadow:
+      0 0 25px 3px #9b23ea,
+      inset 0 0 30px 5px #5f72be;
+  }
+  #countdown {
+    margin: 16px 0 10px;
+    font-size: 5.5rem;
+    font-weight: 900;
+    color: #d48aff;
+    text-shadow: 0 0 20px #d48aff, 0 0 50px #9b23ea;
+    user-select: none;
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* Countdown numeric animation */
+  #countdown.animateCount {
+    animation: pulseScale 0.8s ease infinite;
+  }
+  @keyframes pulseScale {
+    0%, 100% {transform: scale(1);}
+    50% {transform: scale(1.5);}
+  }
+
+  #takePhotoBtn {
+    width: 90%;
+    max-width: 320px;
+    margin-bottom: 20px;
+    background: linear-gradient(145deg, #9b23ea, #5f72be);
+    border: none;
+    border-radius: 30px;
+    padding: 14px 0;
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: #fff;
+    cursor: pointer;
+    box-shadow:
+      0 0 20px #d48aff,
+      0 0 50px #9b23ea;
+    user-select: none;
+    transition: background 0.35s ease;
+    letter-spacing: 2px;
+  }
+  #takePhotoBtn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #d48aff, #b86aff);
+    box-shadow:
+      0 0 35px #d48aff,
+      0 0 70px #b86aff;
+  }
+  #takePhotoBtn:disabled {
+    background: #43196a;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  #stripFrame {
+    width: 320px;
+    background: #201c36;
+    padding: 18px 20px;
+    border-radius: 30px;
+    box-shadow:
+      inset 0 0 40px 12px #9b23ea,
+      0 0 70px 15px #5f72be;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-height: 420px;
+    overflow: hidden;
+  }
+  #stripFrame .photo {
+    width: 280px;
+    height: 300px;
+    margin: 14px 0;
+    border-radius: 28px;
+    border: 12px solid white;
+    box-shadow:
+      0 8px 16px rgba(155,35,234,0.65),
+      inset 0 0 40px 10px #d48aff;
+    object-fit: cover;
+    opacity: 0;
+    transform: translateY(50px) scale(0.85);
+    animation-fill-mode: forwards;
+  }
+  #stripFrame .photo.show {
+    animation: showPhotoAnim 0.75s ease forwards;
+  }
+  @keyframes showPhotoAnim {
+    from {
+      opacity: 0;
+      transform: translateY(50px) scale(0.85);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  #downloadBtn {
+    width: 90%;
+    max-width: 320px;
+    margin: 14px auto 18px;
+    padding: 14px 0;
+    border-radius: 30px;
+    font-weight: 900;
+    font-size: 1.2rem;
+    color: white;
+    background: linear-gradient(145deg, #5f72be, #9b23ea);
+    border: none;
+    box-shadow:
+      0 0 20px #a5b4f9,
+      0 0 50px #5f72be;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.3s ease;
+    letter-spacing: 2px;
+  }
+  #downloadBtn:hover {
+    background: linear-gradient(135deg, #b7c3f7, #ad78fb);
+    box-shadow:
+      0 0 30px #ad78fb,
+      0 0 60px #b7c3f7;
+  }
+  /* Flash animation on photo capture */
+  #flash {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    background: white;
+    opacity: 0;
+    z-index: 20;
+    border-radius: 32px;
+  }
+  #flash.active {
+    animation: flashAnim 0.4s ease forwards;
+  }
+  @keyframes flashAnim {
+    0% {opacity: 0.9;}
+    100% {opacity: 0;}
+  }
+
+  /* Mobile friendly */
+  @media (max-width: 400px) {
+    #app {
+      width: 95vw;
+      max-height: 600px;
+    }
+    #stripFrame .photo {
+      width: 90vw;
+      height: auto;
+      aspect-ratio: 9 / 16;
+      margin: 12px 0;
+    }
+  }
+
+<div id="app" role="main" aria-label="Life4cuts style photobooth app">
+ <header>PHOTOBOOTH</header>
+ <main>
+   <video id="video" autoplay playsinline muted aria-label="Camera preview</video>
+   <div id="countdown" aria-live="polite" aria-atomic="true" role="alert</div>
+   <button id="takePhotoBtn" aria-label="Start taking photos" disabled>Start</button>
+   <div id="stripFrame" aria-label="Photo strip" role="region" aria-live="polite" aria-atomic="true" hidden</div>
+   <button id="downloadBtn" aria-label="Download photo strip" hidden>Download Strip</button>
+ <div id="flash<script>
+  const video = document.getElementById('video');
+  const takePhotoBtn = document.getElementById('takePhotoBtn');
+  const countdownEl = document.getElementById('countdown');
+  const stripFrame = document.getElementById('stripFrame');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const flash = document.getElementById('flash');
+
+  const PHOTOS_REQUIRED = 3;
+  let photosTaken = 0;
+  const photoData = [];
+
+  let stream;
+  let isTakingPhoto = false;
+
+  // Initialize camera access and video feed
+  async function initCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+      video.srcObject = stream;
+      video.onloadedmetadata = () => {
+        video.play();
+        takePhotoBtn.disabled = false;
+        takePhotoBtn.textContent = 'Take Photo';
+      };
+    } catch (err) {
+      alert("Camera access denied or not available. Please allow camera and reload.");
+      takePhotoBtn.disabled = true;
+      countdownEl.textContent = "No camera access";
+    }
+  }
+
+  // Countdown with scaling animation for each second
+  async function countdown(seconds) {
+    countdownEl.classList.add('animateCount');
+    for (let i = seconds; i > 0; i--) {
+      countdownEl.textContent = i;
+      await new Promise(r => setTimeout(r, 800));
+    }
+    countdownEl.textContent = '';
+    countdownEl.classList.remove('animateCount');
+  }
+
+  // Flash animation on screen on capture
+  function flashScreen() {
+    flash.classList.add('active');
+    setTimeout(() => flash.classList.remove('active'), 400);
+  }
+
+  // Capture photo from video and return base64
+  function capturePhoto() {
+    const canvas = document.createElement('canvas');
+    const videoRatio = video.videoWidth / video.videoHeight;
+    const targetWidth = 320;
+    const targetHeight = Math.round(targetWidth / videoRatio);
+
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    return canvas.toDataURL('image/jpeg', 0.92);
+  }
+
+  // Show photo strip and animate photos in
+  function showPhotoStrip() {
+    stripFrame.innerHTML = '';
+    photoData.forEach((src, i) => {
+      const img = document.createElement('img');
+      img.src = src;
+      img.classList.add('photo');
+      img.alt = `Photobooth picture ${i + 1}`;
+      stripFrame.appendChild(img);
+      
+      setTimeout(() => {
+        img.classList.add('show');
+      }, i * 300);
+    });
+    stripFrame.hidden = false;
+    downloadBtn.hidden = false;
+  }
+
+  // Create a composite photo strip image for download
+  function generateDownloadableStrip() {
+    return new Promise((resolve) => {
+      const canvasWidth = 360;
+      const canvasHeight = 1024; // 3 photos + margins and frame space
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasWidth;
+      canvas.height = canvasHeight;
+      const ctx = canvas.getContext('2d');
+
+      // Gradient frame background
+      const grad = ctx.createLinearGradient(0, 0, 0, canvasHeight);
+      grad.addColorStop(0, '#9b23ea');
+      grad.addColorStop(1, '#5f72be');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      // Photo areas with white border and shadows
+      const margin = 28;
+      const photoHeight = (canvasHeight - (margin * 4)) / 3; 
+      const photoWidth = canvasWidth - margin * 2;
+
+      photoData.forEach((src, index) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous"; // in case 
+        img.onload = () => {
+          const x = margin;
+          const y = margin + index * (photoHeight + margin);
+
+          // White border area
+          ctx.fillStyle = 'white';
+          ctx.shadowColor = 'rgba(155,35,234,0.5)';
+          ctx.shadowBlur = 20;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 10;
+          ctx.fillRect(x - 14, y - 14, photoWidth + 28, photoHeight + 28);
+
+          // Remove shadow for the image itself
+          ctx.shadowColor = 'transparent';
+
+          // Draw actual photo
+          ctx.drawImage(img, x, y, photoWidth, photoHeight);
+
+          // Resolve once the last image is drawn
+          if(index === photoData.length - 1) {
+            resolve(canvas.toDataURL('image/png'));
+          }
+        };
+        img.onerror = () => {
+          // fallback resolve to avoid hanging if image fails
+          if(index === photoData.length -1) {
+            resolve(canvas.toDataURL('image/png'));
+          }
+        }
+        img.src = src;
+      });
+    });
+  }
+
+  // Download photo strip image
+  async function downloadStrip() {
+    const url = await generateDownloadableStrip();
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'life4cuts-photostrip.png';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  takePhotoBtn.addEventListener('click', async () => {
+    if (isTakingPhoto) return;
+    if (photosTaken >= PHOTOS_REQUIRED) {
+      // Reset session
+      photosTaken = 0;
+      photoData.length = 0;
+      stripFrame.hidden = true;
+      downloadBtn.hidden = true;
+      takePhotoBtn.textContent = 'Take Photo';
+      countdownEl.textContent = '';
+      return;
+    }
+
+    isTakingPhoto = true;
+    takePhotoBtn.disabled = true;
+
+    // Countdown
+    await countdown(3);
+    // Flash
+    flashScreen();
+    // Capture
+    const photo = capturePhoto();
+    photoData.push(photo);
+    photosTaken++;
+
+    if (photosTaken< PHOTOS_REQUIRED) {
+      takePhotoBtn.textContent = `Take Photo ${photosTaken + 1}`;
+    } else {
+      takePhotoBtn.textContent = 'Restart';
+      showPhotoStrip();
+    }
+    takePhotoBtn.disabled = false;
+    isTakingPhoto = false;
+  });
+
+  downloadBtn.addEventListener('click', downloadStrip);
+
+  // Initialize camera on load
+  initCamera();
+</script>
+
